@@ -68,7 +68,7 @@ receiverIo.on('connection', function (receiverClient) {
 server.listen(port, currentIp, function () {
     console.log(currentIp + ":" + port);
     console.log("Server is listening....");
-    // opn('http://{ip}:{port}'.replace("{ip}", currentIp).replace("{port}", port));
+    opn('http://{ip}:{port}'.replace("{ip}", currentIp).replace("{port}", port));
     // clearCache();
 });
 
