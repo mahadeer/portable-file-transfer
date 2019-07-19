@@ -44,7 +44,12 @@
                 </p>
             </div>
             <div id="accepted" style="display: none;">
-                <div class="form-group">
+                <div class="upload-btn-wrapper">
+                    <button class="btn btn-light btn-sm"><span class="oi oi-plus"></span> Add Files</button>
+                    <input id="upload-input" type="file" name="uploadFiles" multiple />
+                </div>
+                <div id="upload-container" class="upload-cards p-4"></div>
+                <div class="form-group delete-this" style="display: none;">
                     <label class="col-sm-3 control-label">
                         Attachment(s)
                         (Attach multiple files.)
@@ -97,12 +102,48 @@
             receiver.on('connections', function (connections) {
                 $("#client-connections").html((connections - 1) + " devices connected");
             });
+
+            /* Manual File upload */
+            var uploadContainer = $("#upload-container");
+            var fileCardTemplate = [
+                '<div class="card text-dark bg-light mb-3"><div class="card-body">',
+                '<span class="close oi oi-x"></span><span> <b>File Name:</b> {fileName} </span><br />',
+                '<span> <b>Size:</b> {fileSize}</span><br />',
+                '<div class="progress mt-3">',
+                '<div class="progress-bar" role="progressbar" style="width: 0%;"',
+                ' aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>',
+                '</div></div></div>'
+            ];
+            $("#upload-input").on("change", function (event) {
+                var files = event.target.files;
+                Object.keys(files).forEach(function (key) {
+                    var fileCardHTML = fileCardTemplate.join(" ")
+                        .replace("{fileName}", files[key].name)
+                        .replace("{fileSize}", getFileSize(files[key].size, 0));
+                    var fileCard = $(fileCardHTML);
+                    uploadContainer.prepend(fileCard);
+                    createUploader(files[key], fileCard);
+                });
+            });
+        });
+
+        var sizeMap = ["bytes", "KB", "MB", "GB"];
+
+        function getFileSize(sizeVal, mapIdx) {
+            if (sizeVal < 1024) {
+                return sizeVal + " " + sizeMap[mapIdx];
+            } else {
+                mapIdx++;
+                return getFileSize(parseFloat((sizeVal / 1024).toFixed(2)), mapIdx);
+            }
+        }
+
+        function createUploader(file, dom) {
             var uploader = new SocketIOFileUpload(sender);
             uploader.chunkSize = 1024 * 10000;
-            uploader.listenOnInput(document.getElementById("file-upload"));
-            var pB = $(".progress-bar");
+            var pB = dom.find(".progress-bar");
             uploader.addEventListener('start', function (e) {
-                $(".progress").show();
+                // add toaster
             });
 
             uploader.addEventListener("progress", function (event) {
@@ -114,13 +155,33 @@
             });
 
             uploader.addEventListener("complete", function (e) {
-                alert("completed");
-                $(".progress").hide();
-                pB.html("0%");
-                pB.css("width", "0%");
-                pB.attr("aria-valuenow", "0%");
+                // toaster
+                pB.html("Completed");
+                pB.addClass("bg-success");
+                pB.css("width", "100%");
+                pB.attr("aria-valuenow", "100%");
+                uploader.destroy();
             });
-        });
+
+            var onError = function () {
+                if (pB.attr("aria-valuenow") == "100%") {
+                    dom.remove();
+                } else {
+                    pB.html("Try again");
+                    pB.addClass("bg-danger");
+                    pB.addClass("progress-bar-striped");
+                    pB.css("width", "100%");
+                    pB.attr("aria-valuenow", "100%");
+                }
+                uploader.destroy();
+            };
+
+            uploader.addEventListener("error", onError);
+
+            dom.find(".close").on("click", onError);
+
+            uploader.submitFiles([file]);
+        }
     </script>
 </body>
 

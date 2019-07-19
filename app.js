@@ -50,6 +50,9 @@ senderIo.on('connection', function (senderClient) {
     var uploader = new siofu();
     uploader.dir = "public/temp/";
     uploader.listen(senderClient);
+    uploader.on("error", function() {
+        console.log("Error uploading file");
+    });
 });
 
 receiverIo.on('connection', function (receiverClient) {
@@ -68,7 +71,7 @@ receiverIo.on('connection', function (receiverClient) {
 server.listen(port, currentIp, function () {
     console.log(currentIp + ":" + port);
     console.log("Server is listening....");
-    opn('http://{ip}:{port}'.replace("{ip}", currentIp).replace("{port}", port));
+    // opn('http://{ip}:{port}'.replace("{ip}", currentIp).replace("{port}", port));
     // clearCache();
 });
 
