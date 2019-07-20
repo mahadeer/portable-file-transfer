@@ -84,7 +84,7 @@
         /* Manual File download */
         var downloadContainer = $("#download-container");
         var fileCardTemplate = [
-            '<div id="{fileName}" class="card text-dark bg-light mb-3">',
+            '<div id="{fileNameId}" class="card text-dark bg-light mb-3">',
             '<div class="card-body">',
             '<div class="row">',
             '<div class="col-9">{fileName}</div>',
@@ -94,8 +94,10 @@
         ];
         receiver.on("files-updated", function (fileArray) {
             fileArray.forEach(function (fileName) {
-                if (downloadContainer.find("#" + fileName).length == 0) {
+                var fileId = fileName.replace(/[^a-zA-Z0-9]/g, "");
+                if (downloadContainer.find("#" + fileId).length == 0) {
                     var fileCardHTML = fileCardTemplate.join(" ")
+                        .replace(/{fileNameId}/g, fileId)
                         .replace(/{fileName}/g, fileName);
                     downloadContainer.prepend($(fileCardHTML));
                 }
