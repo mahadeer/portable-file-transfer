@@ -5,9 +5,11 @@ const serve = require('koa-static');
 const koaBody = require('koa-body');
 const path = require('path');
 const siofu = require("socketio-file-upload");
+const fs = require('fs');
 const app = new Koa();
 const currentIp = getAddress();
 const port = 1307;
+const directory = 'public/received/';
 
 app.use(koaBody({ multipart: true }));
 
@@ -25,6 +27,7 @@ const server = require("http").Server(app.callback()),
 
 const senderIo = io.of('/sender');
 const receiverIo = io.of("/receive");
+let inProgress = [];
 
 let isSenderAvailable = false;
 let receivers = 0;
@@ -46,11 +49,38 @@ senderIo.on('connection', function (senderClient) {
             isSenderAvailable = false;
             receiverIo.emit("no-sender");
         });
+
+        senderClient.on("error-upload", function (fN) {
+            try {
+                fs.unlink(path.join(directory, fN), err => {
+                    if (err) throw err;
+                    if (err) throw err;
+                    var idx = inProgress.indexOf(fN);
+                    inProgress.splice(idx, 1);
+                    receiverIo.emit("files-updated", getFiles());
+                });
+                console.log("Error uploading file");
+            } catch (ex) {
+                console.log(ex);
+            }
+        });
     }
     var uploader = new siofu();
-    uploader.dir = "public/temp/";
+    uploader.dir = directory;
     uploader.listen(senderClient);
-    uploader.on("error", function() {
+    uploader.on("start", function (event) {
+        inProgress.push(event.file.name);
+    });
+    uploader.on("complete", function (event) {
+        var idx = inProgress.indexOf(event.file.name);
+        inProgress.splice(idx, 1);
+    });
+    uploader.on("error", function (fileInfo) {
+        fs.unlink(fileInfo.file.pathName, err => {
+            if (err) throw err;
+            var idx = inProgress.indexOf(event.file.name);
+            inProgress.splice(idx, 1);
+        });
         console.log("Error uploading file");
     });
 });
@@ -66,28 +96,24 @@ receiverIo.on('connection', function (receiverClient) {
         receivers--;
         receiverIo.emit('connections', receivers);
     });
+    receiverIo.emit("files-updated", getFiles());
 });
 
 server.listen(port, currentIp, function () {
     console.log(currentIp + ":" + port);
     console.log("Server is listening....");
-    // opn('http://{ip}:{port}'.replace("{ip}", currentIp).replace("{port}", port));
+    //opn('http://{ip}:{port}'.replace("{ip}", currentIp).replace("{port}", port));
     // clearCache();
 });
 
-function clearCache() {
-    const fs = require('fs');
-    const directory = 'public/temp/';
-
-    fs.readdir(directory, (err, files) => {
-        if (err) throw err;
-        for (const file of files) {
-            fs.unlink(path.join(directory, file), err => {
-                if (err) throw err;
-            });
+function getFiles() {
+    var files = [];
+    fs.readdirSync(directory).forEach(function (file) {
+        if (inProgress.indexOf(file) === -1) {
+            files.push(file);
         }
-        console.log("Cache Cleared...");
     });
+    return files;
 }
 
 function getAddress() {

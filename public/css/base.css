@@ -138,6 +138,10 @@ body {
     top: 60px;
 }
 
+.upload-cards.download:empty:after {
+    content: "No files sent..";
+}
+
 .upload-cards .card-body {
     text-align: left;
 }

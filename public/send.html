@@ -49,22 +49,6 @@
                     <input id="upload-input" type="file" name="uploadFiles" multiple />
                 </div>
                 <div id="upload-container" class="upload-cards p-4"></div>
-                <div class="form-group delete-this" style="display: none;">
-                    <label class="col-sm-3 control-label">
-                        Attachment(s)
-                        (Attach multiple files.)
-                    </label>
-                    <div class="col-sm-9">
-                        <span class="btn btn-default">
-                            <input id="file-upload" type="file" class="file" multiple data-show-upload="true"
-                                data-show-caption="true">
-                        </span>
-                    </div>
-                </div>
-                <div class="progress" style="display: none;">
-                    <div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0"
-                        aria-valuemax="100">0%</div>
-                </div>
             </div>
         </main>
 
@@ -161,6 +145,7 @@
                 pB.css("width", "100%");
                 pB.attr("aria-valuenow", "100%");
                 uploader.destroy();
+                uploader = null;
             });
 
             var onError = function () {
@@ -172,8 +157,10 @@
                     pB.addClass("progress-bar-striped");
                     pB.css("width", "100%");
                     pB.attr("aria-valuenow", "100%");
+                    sender.emit("error-upload", file.name);
                 }
                 uploader.destroy();
+                uploader = null;
             };
 
             uploader.addEventListener("error", onError);

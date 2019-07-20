@@ -34,12 +34,20 @@
             </div>
             <div id="waiting" class="alert alert-info" role="alert" style="display: none;">
                 <h4 class="alert-heading">No sender registered!</h4>
-                <p>Waiting for a sender to join. If you wish to Send <a class="alert-link" href="/send.html">click here</a>.
+                <p>Waiting for a sender to join. If you wish to Send <a class="alert-link" href="/send.html">click
+                        here</a>.
                     If you wish to receive make sure some one is
                     trying to send.
                 </p>
             </div>
             <div id="connected">
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <strong>Performance haul!</strong> <br />Refresh the page to see new files.
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div id="download-container" class="upload-cards download p-4"></div>
             </div>
         </main>
 
@@ -70,6 +78,26 @@
         receiver.on('connected', function () {
             $("#waiting").hide();
             $("#connected").show();
+            receiver.emit("get-files");
+        });
+
+        /* Manual File download */
+        var downloadContainer = $("#download-container");
+        var fileCardTemplate = [
+            '<div class="card text-dark bg-light mb-3">',
+            '<div class="card-body">',
+            '<div class="row">',
+            '<div class="col-9">{fileName}</div>',
+            '<div class="col-3"><a class="btn" href="/received/{fileName}" download="">',
+            '<span class="oi oi-data-transfer-download"></span></a></div>',
+            '</div></div></div>'
+        ];
+        receiver.on("files-updated", function (fileArray) {
+            fileArray.forEach(function (fileName) {
+                var fileCardHTML = fileCardTemplate.join(" ")
+                    .replace(/{fileName}/g, fileName);
+                downloadContainer.prepend($(fileCardHTML));
+            });
         });
         receiver.on('connections', function (connections) {
             $("#client-connections").html((connections - 1) + " devices connected");
