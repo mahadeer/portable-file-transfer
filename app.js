@@ -2,6 +2,7 @@
 const opn = require('opn');
 const Koa = require('koa');
 const serve = require('koa-static');
+const Router = require('koa-router')
 const koaBody = require('koa-body');
 const path = require('path');
 const siofu = require("socketio-file-upload");
@@ -19,7 +20,15 @@ app.use(async function (ctx, next) {
     ctx.redirect('/404.html');
 });
 
+const router = new Router();
+router.get("/download/:filename", function(ctx, next){
+    var filePath = path.join(__dirname, '/public/received/', ctx.params.filename);
+    ctx.body = fs.createReadStream(filePath);
+    ctx.attachment(filePath);
+});
+
 app.use(serve(path.join(__dirname, '/public')));
+app.use(router.middleware());
 siofu.listen(app);
 
 const server = require("http").Server(app.callback()),
